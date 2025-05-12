@@ -1,0 +1,206 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col">
+            <h1>统计概览</h1>
+        </div>
+    </div>
+
+    <!-- 合约统计卡片 -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">活跃合约</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>合约名称</th>
+                                    <th>周期</th>
+                                    <th>止损金额</th>
+                                    <th>创建时间</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for contract in active_contracts %}
+                                <tr>
+                                    <td>{{ contract.contract_name }}</td>
+                                    <td>{{ contract.period }}</td>
+                                    <td>{{ "%.2f"|format(contract.stop_loss_amount) }}</td>
+                                    <td>{{ contract.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                                    <td>
+                                        <a href="{{ url_for('statistics.contract_statistics', contract_id=contract.id) }}" 
+                                           class="btn btn-sm btn-outline-primary">查看详情</a>
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="5" class="text-center">暂无活跃合约</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">已结束合约</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>合约名称</th>
+                                    <th>周期</th>
+                                    <th>止损金额</th>
+                                    <th>结束时间</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for contract in exited_contracts %}
+                                <tr>
+                                    <td>{{ contract.contract_name }}</td>
+                                    <td>{{ contract.period }}</td>
+                                    <td>{{ "%.2f"|format(contract.stop_loss_amount) }}</td>
+                                    <td>{{ contract.exited_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                                    <td>
+                                        <a href="{{ url_for('statistics.contract_statistics', contract_id=contract.id) }}" 
+                                           class="btn btn-sm btn-outline-primary">查看详情</a>
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="5" class="text-center">暂无已结束合约</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 账户统计卡片 -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">账户统计</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>账户名称</th>
+                                    <th>账户类型</th>
+                                    <th>初始资金</th>
+                                    <th>当前资金</th>
+                                    <th>收益率</th>
+                                    <th>风险金</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for account in accounts %}
+                                <tr>
+                                    <td>{{ account.account_name }}</td>
+                                    <td>
+                                        <span class="badge {{ 'bg-primary' if account.account_type == 'large' else 'bg-secondary' }}">
+                                            {{ '大账户' if account.account_type == 'large' else '小账户' }}
+                                        </span>
+                                    </td>
+                                    <td>{{ "%.2f"|format(account.initial_value) }}</td>
+                                    <td>{{ "%.2f"|format(account.current_value) }}</td>
+                                    <td>
+                                        {% set return_rate = ((account.current_value - account.initial_value) / account.initial_value * 100) %}
+                                        <span class="text-{{ 'success' if return_rate >= 0 else 'danger' }}">
+                                            {{ "%.2f"|format(return_rate) }}%
+                                        </span>
+                                    </td>
+                                    <td>{{ "%.2f"|format(account.risk_fund) }}</td>
+                                    <td>
+                                        <a href="{{ url_for('statistics.account_statistics', account_id=account.id) }}" 
+                                           class="btn btn-sm btn-outline-primary">查看详情</a>
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="7" class="text-center">暂无账户数据</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block scripts %}
+<script>
+// 添加表格排序功能
+document.addEventListener('DOMContentLoaded', function() {
+    const tables = document.querySelectorAll('table');
+    
+    tables.forEach(table => {
+        const headers = table.querySelectorAll('th');
+        headers.forEach((header, index) => {
+            if (!header.textContent.includes('操作')) {  // 排除操作列
+                header.style.cursor = 'pointer';
+                header.addEventListener('click', () => {
+                    sortTable(table, index);
+                });
+            }
+        });
+    });
+});
+
+function sortTable(table, column) {
+    const tbody = table.querySelector('tbody');
+    const rows = Array.from(tbody.querySelectorAll('tr'));
+    
+    // 获取当前排序方向
+    const currentDirection = table.dataset.sortDirection === 'asc' ? 'desc' : 'asc';
+    table.dataset.sortDirection = currentDirection;
+    
+    // 排序行
+    rows.sort((a, b) => {
+        const aValue = a.cells[column].textContent.trim();
+        const bValue = b.cells[column].textContent.trim();
+        
+        // 尝试转换为数字
+        const aNum = parseFloat(aValue);
+        const bNum = parseFloat(bValue);
+        
+        if (!isNaN(aNum) && !isNaN(bNum)) {
+            return currentDirection === 'asc' ? aNum - bNum : bNum - aNum;
+        }
+        
+        // 字符串比较
+        return currentDirection === 'asc' 
+            ? aValue.localeCompare(bValue, 'zh-CN')
+            : bValue.localeCompare(aValue, 'zh-CN');
+    });
+    
+    // 重新插入排序后的行
+    rows.forEach(row => tbody.appendChild(row));
+}
+</script>
+{% endblock %}
+
+{% endblock %} 

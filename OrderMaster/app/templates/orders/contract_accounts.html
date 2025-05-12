@@ -1,0 +1,104 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col">
+            <h1>关联账号 - {{ contract.contract_name }}</h1>
+        </div>
+        <div class="col-auto">
+            <a href="{{ url_for('orders.overview') }}" class="btn btn-secondary">返回总览</a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">当前关联账号</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>账户名称</th>
+                                    <th>账户类型</th>
+                                    <th>订单状态</th>
+                                    <th>创建时间</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for order in orders %}
+                                <tr>
+                                    <td>{{ order.account_name }}</td>
+                                    <td>{{ order.account_type }}</td>
+                                    <td>
+                                        <span class="badge {{ 
+                                            'bg-warning' if order.status == 'pending' 
+                                            else 'bg-info' if order.status == 'executed' 
+                                            else 'bg-secondary' 
+                                        }}">
+                                            {{ 
+                                                '待执行' if order.status == 'pending' 
+                                                else '已执行' if order.status == 'executed' 
+                                                else '已出场' 
+                                            }}
+                                        </span>
+                                    </td>
+                                    <td>{{ order.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                                    <td>
+                                        {% if order.status == 'pending' %}
+                                        <form method="POST" action="{{ url_for('orders.remove_account', contract_id=contract.id, order_id=order.id) }}" 
+                                              class="d-inline" onsubmit="return confirm('确定要移除该账号吗？');">
+                                            <button type="submit" class="btn btn-sm btn-outline-danger">移除</button>
+                                        </form>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="5" class="text-center">暂无关联账号</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">添加账号</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('orders.add_account', contract_id=contract.id) }}">
+                        <div class="mb-3">
+                            <label class="form-label">选择要添加的账号</label>
+                            <div>
+                                {% for account in available_accounts %}
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="account_ids" 
+                                           id="account_{{ account.id }}" value="{{ account.id }}"
+                                           {% if account.id in existing_account_ids %}disabled{% endif %}>
+                                    <label class="form-check-label" for="account_{{ account.id }}">
+                                        {{ account.account_name }} ({{ account.account_type }})
+                                        {% if account.id in existing_account_ids %}
+                                        <span class="text-muted">(已关联)</span>
+                                        {% endif %}
+                                    </label>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary">添加选中账号</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

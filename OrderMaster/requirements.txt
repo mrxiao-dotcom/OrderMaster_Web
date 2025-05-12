@@ -1,0 +1,22 @@
+# Web框架
+Flask==2.3.3
+Flask-Login==0.6.2
+
+# 数据库连接
+PyMySQL==1.1.0
+
+# HTTP请求
+requests==2.31.0
+
+# 日期时间处理
+python-dateutil==2.8.2
+
+# 工具库
+Werkzeug==2.3.7
+Jinja2==3.1.2
+itsdangerous==2.1.2
+click==8.1.7
+
+# 开发工具
+pytest==7.4.0
+pytest-flask==1.2.0

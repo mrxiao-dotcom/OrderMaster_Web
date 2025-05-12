@@ -1,0 +1,248 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col">
+            <h1>合约详情统计</h1>
+        </div>
+        <div class="col-auto">
+            <a href="{{ url_for('statistics.index') }}" class="btn btn-secondary">返回概览</a>
+        </div>
+    </div>
+
+    <!-- 合约基本信息 -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">合约信息</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table">
+                        <tr>
+                            <th style="width: 30%">合约名称</th>
+                            <td>{{ contract.contract_name }}</td>
+                        </tr>
+                        <tr>
+                            <th>周期</th>
+                            <td>{{ contract.period }}</td>
+                        </tr>
+                        <tr>
+                            <th>止损金额</th>
+                            <td>{{ "%.2f"|format(contract.stop_loss_amount) }}</td>
+                        </tr>
+                        <tr>
+                            <th>布林带周期</th>
+                            <td>{{ contract.bollinger_period }}</td>
+                        </tr>
+                        <tr>
+                            <th>创建时间</th>
+                            <td>{{ contract.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                        </tr>
+                        <tr>
+                            <th>状态</th>
+                            <td>
+                                <span class="badge {{ 'bg-success' if contract.status == 'active' else 'bg-secondary' }}">
+                                    {{ '活跃' if contract.status == 'active' else '已结束' }}
+                                </span>
+                            </td>
+                        </tr>
+                        {% if contract.status == 'exited' %}
+                        <tr>
+                            <th>结束时间</th>
+                            <td>{{ contract.exited_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                        </tr>
+                        {% endif %}
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">合约统计</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table">
+                        <tr>
+                            <th style="width: 30%">订单总数</th>
+                            <td>{{ orders|length }}</td>
+                        </tr>
+                        <tr>
+                            <th>待执行订单</th>
+                            <td>{{ orders|selectattr('status', 'equalto', 'pending')|list|length }}</td>
+                        </tr>
+                        <tr>
+                            <th>已执行订单</th>
+                            <td>{{ orders|selectattr('status', 'equalto', 'executed')|list|length }}</td>
+                        </tr>
+                        <tr>
+                            <th>已结束订单</th>
+                            <td>{{ orders|selectattr('status', 'equalto', 'exited')|list|length }}</td>
+                        </tr>
+                        <tr>
+                            <th>平均收益率</th>
+                            <td>
+                                {% set total_return = 0 %}
+                                {% set exited_orders = orders|selectattr('status', 'equalto', 'exited')|list %}
+                                {% for order in exited_orders %}
+                                    {% set total_return = total_return + ((order.exit_price - order.entry_price) / order.entry_price * 100) %}
+                                {% endfor %}
+                                {% if exited_orders|length > 0 %}
+                                    {% set avg_return = total_return / exited_orders|length %}
+                                    <span class="text-{{ 'success' if avg_return >= 0 else 'danger' }}">
+                                        {{ "%.2f"|format(avg_return) }}%
+                                    </span>
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 订单列表 -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">订单列表</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>账户名称</th>
+                                    <th>状态</th>
+                                    <th>入场价格</th>
+                                    <th>出场价格</th>
+                                    <th>收益率</th>
+                                    <th>执行时间</th>
+                                    <th>结束时间</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for order in orders %}
+                                <tr>
+                                    <td>{{ order.account_name }}</td>
+                                    <td>
+                                        <span class="badge {{ 
+                                            'bg-warning' if order.status == 'pending' 
+                                            else 'bg-info' if order.status == 'executed' 
+                                            else 'bg-secondary' 
+                                        }}">
+                                            {{ 
+                                                '待执行' if order.status == 'pending' 
+                                                else '已执行' if order.status == 'executed' 
+                                                else '已结束' 
+                                            }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {% if order.entry_price %}
+                                            {{ "%.2f"|format(order.entry_price) }}
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if order.exit_price %}
+                                            {{ "%.2f"|format(order.exit_price) }}
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if order.status == 'exited' and order.entry_price %}
+                                            {% set return_rate = ((order.exit_price - order.entry_price) / order.entry_price * 100) %}
+                                            <span class="text-{{ 'success' if return_rate >= 0 else 'danger' }}">
+                                                {{ "%.2f"|format(return_rate) }}%
+                                            </span>
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if order.executed_at %}
+                                            {{ order.executed_at.strftime('%Y-%m-%d %H:%M') }}
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if order.exited_at %}
+                                            {{ order.exited_at.strftime('%Y-%m-%d %H:%M') }}
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="7" class="text-center">暂无订单数据</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block scripts %}
+<script>
+// 添加表格排序功能
+document.addEventListener('DOMContentLoaded', function() {
+    const table = document.querySelector('table');
+    const headers = table.querySelectorAll('th');
+    
+    headers.forEach((header, index) => {
+        header.style.cursor = 'pointer';
+        header.addEventListener('click', () => {
+            sortTable(table, index);
+        });
+    });
+});
+
+function sortTable(table, column) {
+    const tbody = table.querySelector('tbody');
+    const rows = Array.from(tbody.querySelectorAll('tr'));
+    
+    // 获取当前排序方向
+    const currentDirection = table.dataset.sortDirection === 'asc' ? 'desc' : 'asc';
+    table.dataset.sortDirection = currentDirection;
+    
+    // 排序行
+    rows.sort((a, b) => {
+        const aValue = a.cells[column].textContent.trim();
+        const bValue = b.cells[column].textContent.trim();
+        
+        // 尝试转换为数字
+        const aNum = parseFloat(aValue);
+        const bNum = parseFloat(bValue);
+        
+        if (!isNaN(aNum) && !isNaN(bNum)) {
+            return currentDirection === 'asc' ? aNum - bNum : bNum - aNum;
+        }
+        
+        // 字符串比较
+        return currentDirection === 'asc' 
+            ? aValue.localeCompare(bValue, 'zh-CN')
+            : bValue.localeCompare(aValue, 'zh-CN');
+    });
+    
+    // 重新插入排序后的行
+    rows.forEach(row => tbody.appendChild(row));
+}
+</script>
+{% endblock %}
+
+{% endblock %} 

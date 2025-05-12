@@ -1,0 +1,156 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col">
+            <h1>{{ '编辑账户' if account else '新增账户' }}</h1>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8">
+            <form method="POST" class="needs-validation" novalidate>
+                <div class="card">
+                    <div class="card-body">
+                        <!-- 账户名称 -->
+                        <div class="mb-3">
+                            <label for="account_name" class="form-label">账户名称</label>
+                            <input type="text" 
+                                   class="form-control" 
+                                   id="account_name" 
+                                   name="account_name" 
+                                   value="{{ account.account_name if account else '' }}"
+                                   required>
+                            <div class="invalid-feedback">
+                                请输入账户名称
+                            </div>
+                        </div>
+
+                        <!-- 账户类型 -->
+                        <div class="mb-3">
+                            <label class="form-label">账户类型</label>
+                            <div class="btn-group w-100" role="group">
+                                <input type="radio" 
+                                       class="btn-check" 
+                                       name="account_type" 
+                                       id="type_large" 
+                                       value="large"
+                                       {{ 'checked' if account and account.account_type == 'large' else '' }}
+                                       required>
+                                <label class="btn btn-outline-primary" for="type_large">大账户</label>
+
+                                <input type="radio" 
+                                       class="btn-check" 
+                                       name="account_type" 
+                                       id="type_small" 
+                                       value="small"
+                                       {{ 'checked' if account and account.account_type == 'small' else '' }}
+                                       required>
+                                <label class="btn btn-outline-primary" for="type_small">小账户</label>
+                            </div>
+                            <div class="invalid-feedback">
+                                请选择账户类型
+                            </div>
+                        </div>
+
+                        <!-- 初始资金 -->
+                        <div class="mb-3">
+                            <label for="initial_value" class="form-label">初始资金</label>
+                            <div class="input-group">
+                                <span class="input-group-text">¥</span>
+                                <input type="number" 
+                                       class="form-control" 
+                                       id="initial_value" 
+                                       name="initial_value" 
+                                       value="{{ "%.2f"|format(account.initial_value) if account else '' }}"
+                                       step="0.01"
+                                       min="0"
+                                       required>
+                            </div>
+                            <div class="invalid-feedback">
+                                请输入有效的初始资金金额
+                            </div>
+                        </div>
+
+                        <!-- 当前资金（仅在编辑时显示） -->
+                        {% if account %}
+                        <div class="mb-3">
+                            <label for="current_value" class="form-label">当前资金</label>
+                            <div class="input-group">
+                                <span class="input-group-text">¥</span>
+                                <input type="number" 
+                                       class="form-control" 
+                                       id="current_value" 
+                                       name="current_value" 
+                                       value="{{ "%.2f"|format(account.current_value) }}"
+                                       step="0.01"
+                                       min="0"
+                                       required>
+                            </div>
+                            <div class="invalid-feedback">
+                                请输入有效的当前资金金额
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <!-- 风险金 -->
+                        <div class="mb-3">
+                            <label for="risk_fund" class="form-label">风险金</label>
+                            <div class="input-group">
+                                <span class="input-group-text">¥</span>
+                                <input type="number" 
+                                       class="form-control" 
+                                       id="risk_fund" 
+                                       name="risk_fund" 
+                                       value="{{ "%.2f"|format(account.risk_fund) if account else '' }}"
+                                       step="0.01"
+                                       min="0"
+                                       required>
+                            </div>
+                            <div class="invalid-feedback">
+                                请输入有效的风险金金额
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-footer">
+                        <div class="d-flex justify-content-between">
+                            <a href="{{ url_for('accounts.list_accounts') }}" class="btn btn-secondary">返回</a>
+                            <button type="submit" class="btn btn-primary">{{ '保存修改' if account else '创建账户' }}</button>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% block scripts %}
+<script>
+// 表单验证
+(function () {
+    'use strict'
+    var forms = document.querySelectorAll('.needs-validation')
+    Array.prototype.slice.call(forms).forEach(function (form) {
+        form.addEventListener('submit', function (event) {
+            if (!form.checkValidity()) {
+                event.preventDefault()
+                event.stopPropagation()
+            }
+            form.classList.add('was-validated')
+        }, false)
+    })
+})()
+
+// 数字输入验证
+document.querySelectorAll('input[type="number"]').forEach(input => {
+    input.addEventListener('input', function() {
+        if (this.value < 0) {
+            this.value = 0;
+        }
+    });
+});
+</script>
+{% endblock %}
+
+{% endblock %} 
