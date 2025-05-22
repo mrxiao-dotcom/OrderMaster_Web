@@ -1,0 +1,176 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col">
+            <h1>新增合约</h1>
+        </div>
+    </div>
+
+    <form method="POST" class="needs-validation" novalidate>
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <h5 class="card-title">基本信息</h5>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">选择账户（可多选）</label>
+                            <div>
+                                {% for account in accounts %}
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="checkbox" name="account_ids" id="account_{{ account.id }}" value="{{ account.id }}">
+                                    <label class="form-check-label" for="account_{{ account.id }}">
+                                        {{ account.account_name }} ({{ account.account_type }})
+                                    </label>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            <div class="invalid-feedback">请至少选择一个账户</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="contract_name" class="form-label">合约名称</label>
+                            <input type="text" class="form-control" id="contract_name" name="contract_name" required>
+                            <div class="invalid-feedback">请输入合约名称</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="period" class="form-label">周期</label>
+                            <select class="form-select" id="period" name="period" required>
+                                <option value="">请选择周期</option>
+                                <option value="1m">1分钟</option>
+                                <option value="5m">5分钟</option>
+                                <option value="15m">15分钟</option>
+                                <option value="30m">30分钟</option>
+                                <option value="1h">1小时</option>
+                                <option value="4h">4小时</option>
+                                <option value="1d">日线</option>
+                            </select>
+                            <div class="invalid-feedback">请选择周期</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="stop_loss_amount" class="form-label">止损金额</label>
+                            <input type="number" class="form-control" id="stop_loss_amount" name="stop_loss_amount" step="0.01" required>
+                            <div class="invalid-feedback">请输入止损金额</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <h5 class="card-title">交易参数</h5>
+
+                        <div class="mb-3">
+                            <label for="entry_time" class="form-label">进场时间</label>
+                            <input type="text" class="form-control" id="entry_time" name="entry_time" 
+                                   placeholder="例如：0509.1000 表示5月9日10点">
+                            <div class="form-text">请输入格式为"MMDD.HHMM"的时间，例如：0509.1000 表示5月9日10点</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="period_upgrade_time" class="form-label">升周期时间</label>
+                            <input type="text" class="form-control" id="period_upgrade_time" name="period_upgrade_time" 
+                                   placeholder="例如：0509.1000 表示5月9日10点">
+                            <div class="form-text">请输入格式为"MMDD.HHMM"的时间，例如：0509.1000 表示5月9日10点</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="ma_price" class="form-label">均线价格</label>
+                            <input type="number" class="form-control" id="ma_price" name="ma_price" step="0.0001">
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="price" class="form-label">价格</label>
+                            <input type="number" class="form-control" id="price" name="price" step="0.0001">
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="actual_entry_price" class="form-label">实际进场价</label>
+                            <input type="number" class="form-control" id="actual_entry_price" name="actual_entry_price" step="0.0001">
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="stop_loss_price" class="form-label">止损价格</label>
+                            <input type="number" class="form-control" id="stop_loss_price" name="stop_loss_price" step="0.0001">
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="bollinger_period" class="form-label">布林周期</label>
+                            <input type="number" class="form-control" id="bollinger_period" name="bollinger_period" value="20">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col">
+                <div class="d-flex justify-content-between">
+                    <a href="{{ url_for('orders.overview') }}" class="btn btn-secondary">返回</a>
+                    <button type="submit" class="btn btn-primary">保存</button>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+{% block scripts %}
+<script>
+// 表单验证
+(function () {
+    'use strict'
+    var forms = document.querySelectorAll('.needs-validation')
+    Array.prototype.slice.call(forms).forEach(function (form) {
+        form.addEventListener('submit', function (event) {
+            if (!form.checkValidity()) {
+                event.preventDefault()
+                event.stopPropagation()
+            }
+            form.classList.add('was-validated')
+        }, false)
+    })
+})()
+
+// 自动填入当前时间（向上取整到最近的5分钟）
+function setCurrentTime() {
+    const now = new Date();
+    const minutes = Math.ceil(now.getMinutes() / 5) * 5;  // 向上取整到最近的5分钟
+    const hours = now.getHours();
+    const month = String(now.getMonth() + 1).padStart(2, '0');  // 月份从0开始，需要+1
+    const day = String(now.getDate()).padStart(2, '0');
+    
+    // 如果分钟数达到60，需要进位
+    let finalHours = hours;
+    let finalMinutes = minutes;
+    if (minutes === 60) {
+        finalHours = hours + 1;
+        finalMinutes = 0;
+    }
+    
+    const timeStr = `${month}${day}.${String(finalHours).padStart(2, '0')}${String(finalMinutes).padStart(2, '0')}`;
+    
+    document.getElementById('entry_time').value = timeStr;
+    document.getElementById('period_upgrade_time').value = timeStr;
+}
+
+// 页面加载时自动填入时间
+document.addEventListener('DOMContentLoaded', setCurrentTime);
+
+// 自动计算止损价格
+document.getElementById('actual_entry_price').addEventListener('change', function() {
+    const entryPrice = parseFloat(this.value);
+    const stopLossAmount = parseFloat(document.getElementById('stop_loss_amount').value);
+    if (entryPrice && stopLossAmount) {
+        const stopLossPrice = entryPrice - stopLossAmount;
+        document.getElementById('stop_loss_price').value = stopLossPrice.toFixed(4);
+    }
+});
+</script>
+{% endblock %}
+
+{% endblock %}

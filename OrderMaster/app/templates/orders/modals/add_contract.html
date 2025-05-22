@@ -1,0 +1,62 @@
+<div class="modal fade" id="addContractModal" tabindex="-1" aria-labelledby="addContractModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addContractModalLabel">新增合约</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addContractForm" method="POST" action="{{ url_for('orders.add_contract') }}">
+                    <!-- 添加调试信息 -->
+                    <div class="alert alert-info">
+                        Debug信息: 当前可用账户数量: {{ accounts|length }}
+                    </div>
+                    
+                    <!-- 基本信息部分 -->
+                    <div class="mb-3">
+                        <h5>基本信息</h5>
+                        <!-- 这里添加其他基本信息字段 -->
+                    </div>
+                    
+                    <!-- 账户选择部分 -->
+                    <div class="mb-3">
+                        <label class="form-label">选择账户（可多选）</label>
+                        <div class="account-selection-container border rounded p-3">
+                            <!-- 添加调试信息 -->
+                            {% if not accounts %}
+                                <div class="alert alert-warning">
+                                    Debug: 没有找到任何可用账户
+                                </div>
+                            {% else %}
+                                <div class="alert alert-info">
+                                    Debug: 找到 {{ accounts|length }} 个账户
+                                </div>
+                                {% for account in accounts %}
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" 
+                                           name="selected_accounts" 
+                                           value="{{ account.id }}" 
+                                           id="account-{{ account.id }}">
+                                    <label class="form-check-label d-flex justify-content-between align-items-center" 
+                                           for="account-{{ account.id }}">
+                                        <span>
+                                            <i class="fas fa-user-circle me-2"></i>
+                                            {{ account.name }}
+                                        </span>
+                                        <span class="badge bg-secondary">{{ account.type }}</span>
+                                    </label>
+                                </div>
+                                {% endfor %}
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                        <button type="submit" class="btn btn-primary">保存</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,71 +1,107 @@
 from app.utils.db import get_db
+import sys
+import logging
+from app.models.order import Order
 
+logger = logging.getLogger(__name__)
 class Contract:
     @staticmethod
     def get_active_contracts():
+        logger.info("开始获取活跃合约列表")
         db = get_db()
         cursor = db.cursor()
-        
-        query = """
-        SELECT DISTINCT c.*, 
-               (SELECT COUNT(*) FROM orders o WHERE o.contract_id = c.id AND o.status = 'executed') as active_orders_count,
-               (SELECT COUNT(*) FROM orders o WHERE o.contract_id = c.id AND o.status != 'pending') as non_pending_count
-        FROM contracts c
-        JOIN orders o ON c.id = o.contract_id
-        WHERE o.status IN ('pending', 'executed')
-        ORDER BY c.created_at DESC
-        """
-        
-        cursor.execute(query)
-        contracts = cursor.fetchall()
-        
-        # 获取每个合约的订单信息
-        for contract in contracts:
-            order_query = """
-            SELECT o.*, a.account_name, a.account_type
-            FROM orders o
-            JOIN accounts a ON o.account_id = a.id
-            WHERE o.contract_id = %s
-            ORDER BY o.created_at DESC
+        try:
+            sql = """
+            SELECT * FROM contracts
+            WHERE exit_time IS NULL
+            ORDER BY created_at DESC
             """
-            cursor.execute(order_query, (contract['id'],))
-            contract['orders'] = cursor.fetchall()
-            # 设置can_edit属性：只有当所有订单都是pending状态时才能编辑
-            contract['can_edit'] = contract['non_pending_count'] == 0
-        
-        cursor.close()
-        return contracts
-    
-    @staticmethod
-    def get_exited_contracts():
-        db = get_db()
-        cursor = db.cursor()
-        
-        query = """
-        SELECT c.*
-        FROM contracts c
-        WHERE NOT EXISTS (SELECT 1 FROM orders o WHERE o.contract_id = c.id AND o.status != 'exited')
-        AND EXISTS (SELECT 1 FROM orders o WHERE o.contract_id = c.id)
-        ORDER BY c.created_at DESC
-        """
-        
-        cursor.execute(query)
-        contracts = cursor.fetchall()
-        cursor.close()
-        
-        return contracts
+            cursor.execute(sql)
+            contracts = cursor.fetchall()
+            logger.info(f"查询到的合约数量: {len(contracts)}")
+            for contract in contracts:
+                contract['orders'] = Order.get_by_contract(contract['id'])
+                account_names = [order['account_name'] for order in contract['orders']]
+                contract['associated_accounts'] = ', '.join(account_names)
+            return contracts
+        except Exception as e:
+            logger.error(f"获取活跃合约时出错: {str(e)}")
+            raise
+        finally:
+            cursor.close()
     
     @staticmethod
     def get_by_id(contract_id):
+        logger.info(f"通过ID获取合约: {contract_id}")
         db = get_db()
         cursor = db.cursor()
         
-        query = "SELECT * FROM contracts WHERE id = %s"
-        cursor.execute(query, (contract_id,))
-        contract = cursor.fetchone()
-        cursor.close()
+        try:
+            # 修改查询以包含关联账户信息和订单数据
+            query = """
+            SELECT c.*, 
+                COALESCE(GROUP_CONCAT(DISTINCT a.account_name), '') as associated_accounts,
+                COALESCE(GROUP_CONCAT(DISTINCT o.id), '') as order_ids,
+                COALESCE(GROUP_CONCAT(DISTINCT o.status), '') as order_statuses,
+                COALESCE(GROUP_CONCAT(DISTINCT a.id), '') as account_ids
+            FROM contracts c
+            LEFT JOIN orders o ON c.id = o.contract_id
+            LEFT JOIN accounts a ON o.account_id = a.id
+            WHERE c.id = %s
+            GROUP BY c.id
+            """
+            logger.debug(f"执行SQL查询: {query} 参数: {contract_id}")
+            cursor.execute(query, (contract_id,))
+            contract = cursor.fetchone()
+            
+            if contract:
+                # 加载订单数据
+                contract['orders'] = Order.get_by_contract(contract_id)
+                logger.info(f"合约 {contract_id} 的订单数量: {len(contract['orders'])}")
+            
+            return contract
+        except Exception as e:
+            logger.error(f"通过ID获取合约时出错: {str(e)}")
+            logger.error(traceback.format_exc())
+            raise
+        finally:
+            cursor.close()
+
+    @staticmethod
+    def get_exited_contracts():
+        logger.info("开始获取已出场合约列表")
+        db = get_db()
+        cursor = db.cursor()
         
-        return contract
+        try:
+            query = """
+            SELECT c.*, 
+                COALESCE(GROUP_CONCAT(DISTINCT a.account_name), '') as associated_accounts
+            FROM contracts c
+            LEFT JOIN orders o ON c.id = o.contract_id
+            LEFT JOIN accounts a ON o.account_id = a.id
+            WHERE NOT EXISTS (SELECT 1 FROM orders o WHERE o.contract_id = c.id AND o.status != 'exited')
+            AND EXISTS (SELECT 1 FROM orders o WHERE o.contract_id = c.id)
+            GROUP BY c.id
+            ORDER BY c.created_at DESC
+            """
+            
+            cursor.execute(query)
+            contracts = cursor.fetchall()
+            logger.info(f"查询到的已出场合约数量: {len(contracts)}")
+            
+            # 为每个合约加载订单数据
+            for contract in contracts:
+                contract['orders'] = Order.get_by_contract(contract['id'])
+                logger.debug(f"合约 {contract['id']} 的订单数量: {len(contract['orders'])}")
+            
+            return contracts
+        except Exception as e:
+            logger.error(f"获取已出场合约时出错: {str(e)}")
+            logger.error(traceback.format_exc())
+            raise
+        finally:
+            cursor.close()
     
     @staticmethod
     def create(contract_data):

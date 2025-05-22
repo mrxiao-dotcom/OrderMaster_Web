@@ -3,6 +3,7 @@ from flask_login import LoginManager
 from config import DB_CONFIG
 from app.utils.db import init_app as init_db
 import logging
+import sys
 
 login_manager = LoginManager()
 
@@ -17,8 +18,15 @@ def create_app():
     # 配置日志
     logging.basicConfig(
         level=logging.INFO,
-        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+        handlers=[
+            logging.StreamHandler(sys.stdout),  # 输出到控制台
+            logging.FileHandler('app.log', encoding='utf-8')  # 输出到文件
+        ]
     )
+    
+    # 设置 Werkzeug 的日志级别
+    logging.getLogger('werkzeug').setLevel(logging.INFO)
     
     login_manager.init_app(app)
     login_manager.login_view = 'auth.login'

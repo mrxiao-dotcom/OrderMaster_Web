@@ -1,137 +1,182 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h1>订单总览</h1>
-    <div>
-        <div class="btn-group me-2">
-            <a href="{{ url_for('orders.overview', status='active') }}" class="btn btn-outline-primary {{ 'active' if status_filter == 'active' else '' }}">持仓中</a>
-            <a href="{{ url_for('orders.overview', status='exited') }}" class="btn btn-outline-primary {{ 'active' if status_filter == 'exited' else '' }}">已出场</a>
+<div class="container-fluid px-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1 class="h3 mb-0">订单总览</h1>
+        <div>
+            <div class="btn-group btn-group-sm me-2">
+                <a href="{{ url_for('orders.overview', status='active') }}" class="btn btn-outline-primary {{ 'active' if status_filter == 'active' else '' }}">持仓中</a>
+                <a href="{{ url_for('orders.overview', status='exited') }}" class="btn btn-outline-primary {{ 'active' if status_filter == 'exited' else '' }}">已出场</a>
+            </div>
+            {% if is_decision_maker %}
+            <a href="{{ url_for('orders.new_contract') }}" class="btn btn-primary btn-sm">新增合约</a>
+            {% endif %}
         </div>
-        {% if is_decision_maker %}
-        <a href="{{ url_for('orders.new_contract') }}" class="btn btn-primary">新增合约</a>
-        {% endif %}
     </div>
-</div>
 
-<!-- 添加调试信息 -->
-<div class="alert alert-info">
-    当前用户角色: {{ current_user.role }}
-</div>
+    <!-- 添加调试信息 -->
+    <div class="alert alert-info py-1 mb-2 small">
+        当前用户角色: {{ current_user.role }}
+    </div>
 
-<div class="table-responsive">
-    <table class="table table-striped table-hover">
-        <thead>
-            <tr>
-                <th>合约名称</th>
-                <th>周期</th>
-                <th>止损金额</th>
-                <th>进场时间</th>
-                <th>升周期时间</th>
-                <th>均线价格</th>
-                <th>最高/最低价</th>
-                <th>实际进场价</th>
-                <th>止损价格</th>
-                <th>布林周期</th>
-                <th>出场时间</th>
-                <th>操作</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for contract in contracts %}
-            <tr class="contract-row" data-contract-id="{{ contract.id }}">
-                <td>
-                    <button class="btn btn-sm btn-link toggle-accounts" data-contract-id="{{ contract.id }}">
-                        <i class="fas fa-plus"></i>
-                    </button>
-                    {{ contract.contract_name }}
-                </td>
-                <td>{{ contract.period }}</td>
-                <td>{{ "%.2f"|format(contract.stop_loss_amount) }}</td>
-                <td>{{ contract.entry_time }}</td>
-                <td>{{ contract.period_upgrade_time }}</td>
-                <td>{{ "%.4f"|format(contract.ma_price) if contract.ma_price else '-' }}</td>
-                <td>{{ "%.4f"|format(contract.price) if contract.price else '-' }}</td>
-                <td>{{ "%.4f"|format(contract.actual_entry_price) if contract.actual_entry_price else '-' }}</td>
-                <td>{{ "%.4f"|format(contract.stop_loss_price) if contract.stop_loss_price else '-' }}</td>
-                <td>{{ contract.bollinger_period }}</td>
-                <td>{{ contract.exit_time.strftime('%Y-%m-%d %H:%M') if contract.exit_time else '-' }}</td>
-                <td>
-                    {% if is_decision_maker %}
-                    <div class="btn-group">
-                        {% if contract.can_edit %}
-                        <a href="{{ url_for('orders.edit_contract', contract_id=contract.id) }}" 
-                           class="btn btn-sm btn-outline-primary">修改</a>
-                        {% else %}
-                        <button class="btn btn-sm btn-outline-secondary" disabled title="有订单已执行，无法修改">修改</button>
+    <div class="table-responsive">
+        <table class="table table-hover table-sm">
+            <thead>
+                <tr class="small">
+                    <th style="width: 30px;"></th>
+                    <th>合约名称</th>
+                    <th>周期</th>
+                    <th>止损金额</th>
+                    <th>进场时间</th>
+                    <th>升周期时间</th>
+                    <th>均线价格</th>
+                    <th>最高/最低价</th>
+                    <th>实际进场价</th>
+                    <th>止损价格</th>
+                    <th>布林周期</th>
+                    <th>出场时间</th>
+                    <th>创建时间</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody class="small">
+                {% for contract in contracts %}
+                <tr class="contract-row" data-contract-id="{{ contract.id }}">
+                    <td class="text-center">
+                        <button class="btn btn-link btn-sm p-0 toggle-accounts" 
+                                data-contract-id="{{ contract.id }}">
+                            <i class="fas fa-plus-circle text-primary"></i>
+                        </button>
+                    </td>
+                    <td class="text-nowrap">{{ contract.contract_name }}</td>
+                    <td class="text-nowrap">{{ contract.period }}</td>
+                    <td class="text-nowrap">{{ "%.2f"|format(contract.stop_loss_amount) }}</td>
+                    <td class="text-nowrap">{{ contract.entry_time }}</td>
+                    <td class="text-nowrap">{{ contract.period_upgrade_time }}</td>
+                    <td class="text-nowrap">{{ "%.4f"|format(contract.ma_price) if contract.ma_price else '-' }}</td>
+                    <td class="text-nowrap">{{ "%.4f"|format(contract.price) if contract.price else '-' }}</td>
+                    <td class="text-nowrap">{{ "%.4f"|format(contract.actual_entry_price) if contract.actual_entry_price else '-' }}</td>
+                    <td class="text-nowrap">{{ "%.4f"|format(contract.stop_loss_price) if contract.stop_loss_price else '-' }}</td>
+                    <td class="text-nowrap">{{ contract.bollinger_period }}</td>
+                    <td class="text-nowrap">{{ contract.exit_time.strftime('%Y-%m-%d %H:%M') if contract.exit_time else '-' }}</td>
+                    <td class="text-nowrap">{{ contract.created_at.strftime('%Y-%m-%d %H:%M') if contract.created_at else '-' }}</td>
+                    <td>
+                        {% if is_decision_maker %}
+                        <div class="btn-group btn-group-sm">
+                            <a href="{{ url_for('orders.edit_contract', contract_id=contract.id) }}" 
+                               class="btn btn-outline-primary btn-sm py-0">修改</a>
+                            <a href="{{ url_for('orders.contract_accounts', contract_id=contract.id) }}" 
+                               class="btn btn-outline-info btn-sm py-0">关联账号</a>
+                            <form method="POST" action="{{ url_for('orders.delete_contract', contract_id=contract.id) }}" 
+                                  style="display: inline;" 
+                                  onsubmit="return confirm('确定要删除这个合约吗？此操作不可撤销。');">
+                                <button type="submit" class="btn btn-outline-danger btn-sm py-0">删除</button>
+                            </form>
+                        </div>
                         {% endif %}
-                        <a href="{{ url_for('orders.contract_accounts', contract_id=contract.id) }}" 
-                           class="btn btn-sm btn-outline-info">关联账号</a>
-                    </div>
-                    {% endif %}
-                </td>
-            </tr>
-            <tr class="account-details-row" id="accounts-{{ contract.id }}" style="display: none;">
-                <td colspan="11">
-                    <div class="table-responsive">
-                        <table class="table table-sm table-bordered">
-                            <thead>
-                                <tr>
-                                    <th>账户名称</th>
-                                    <th>账户类型</th>
-                                    <th>创建时间</th>
-                                    <th>进场时间</th>
-                                    <th>订单状态</th>
-                                    <th>操作</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for order in contract.orders %}
-                                <tr>
-                                    <td>{{ order.account_name }}</td>
-                                    <td>{{ order.account_type }}</td>
-                                    <td>{{ order.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
-                                    <td>{{ order.entry_time.strftime('%Y-%m-%d %H:%M') if order.entry_time else '-' }}</td>
-                                    <td>
-                                        <span class="badge {{ 
-                                            'bg-warning' if order.status == 'pending' 
-                                            else 'bg-info' if order.status == 'executed' 
-                                            else 'bg-secondary' 
-                                        }}">
-                                            {{ 
-                                                '待执行' if order.status == 'pending' 
-                                                else '已执行' if order.status == 'executed' 
-                                                else '已出场' 
-                                            }}
-                                        </span>
-                                    </td>
-                                    <td>
-                                        {% if order.status == 'pending' and current_user.role == 'executor' %}
-                                        <button class="btn btn-sm btn-success execute-order" 
-                                                data-order-id="{{ order.id }}"
-                                                onclick="executeOrder({{ order.id }})">执行</button>
-                                        {% elif order.status == 'executed' and current_user.role == 'executor' %}
-                                        <button class="btn btn-sm btn-warning exit-order" 
-                                                data-order-id="{{ order.id }}"
-                                                data-bs-toggle="modal" 
-                                                data-bs-target="#exitOrderModal"
-                                                onclick="prepareExitOrder({{ order.id }})">出场</button>
-                                        {% endif %}
-                                    </td>
-                                </tr>
+                    </td>
+                </tr>
+                
+                <!-- 只展示一个账户列表 -->
+                <tr class="account-details-row small" id="accounts-{{ contract.id }}" style="display: none;">
+                    <td colspan="14">
+                        <!-- 调试信息 -->
+                        <div class="alert alert-info py-1 mb-2">
+                            合约ID: {{ contract.id }} | 订单数量: {{ contract.orders|length }}
+                        </div>
+                        
+                        <!-- 账户列表只渲染一次 -->
+                        <div class="associated-accounts-container">
+                            {% if current_user.role == 'executor' %}
+                                {# 下单员只显示待执行订单，并有执行按钮 #}
+                                {% for order in contract.orders if order.status == 'pending' %}
+                                <div class="account-record mb-1">
+                                    <div class="card">
+                                        <div class="card-body py-2">
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <div class="account-info">
+                                                    <div class="account-name">
+                                                        <i class="fas fa-user-circle me-1"></i>
+                                                        <span class="fw-bold">{{ order.account_name }}</span>
+                                                        <small class="text-muted ms-1">(ID:{{ order.account_id }})</small>
+                                                    </div>
+                                                    <div class="account-details text-muted">
+                                                        <small>类型：{{ order.account_type }}</small>
+                                                    </div>
+                                                </div>
+                                                <div class="account-status-section d-flex align-items-center">
+                                                    <span class="badge bg-warning me-2">待执行</span>
+                                                    <button class="btn btn-sm btn-success py-0" onclick="executeOrder({{ order.id }})">执行</button>
+                                                </div>
+                                            </div>
+                                            <div class="order-timeline text-muted">
+                                                <small>
+                                                    <span class="me-2">
+                                                        <i class="fas fa-clock me-1"></i>
+                                                        创建：{{ order.created_at.strftime('%Y-%m-%d %H:%M') if order.created_at else '-' }}
+                                                    </span>
+                                                </small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                                 {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                </td>
-            </tr>
-            {% else %}
-            <tr>
-                <td colspan="11" class="text-center">暂无合约数据</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+                            {% else %}
+                                {# 决策者和其他角色显示所有订单，无执行按钮 #}
+                                {% for order in contract.orders %}
+                                <div class="account-record mb-1">
+                                    <div class="card">
+                                        <div class="card-body py-2">
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <div class="account-info">
+                                                    <div class="account-name">
+                                                        <i class="fas fa-user-circle me-1"></i>
+                                                        <span class="fw-bold">{{ order.account_name }}</span>
+                                                        <small class="text-muted ms-1">(ID:{{ order.account_id }})</small>
+                                                    </div>
+                                                    <div class="account-details text-muted">
+                                                        <small>类型：{{ order.account_type }}</small>
+                                                    </div>
+                                                </div>
+                                                <div class="account-status-section d-flex align-items-center">
+                                                    <span class="badge {% if order.status == 'pending' %}bg-warning{% elif order.status == 'executed' %}bg-success{% else %}bg-secondary{% endif %} me-2">
+                                                        {{ '待执行' if order.status == 'pending' else '已执行' if order.status == 'executed' else '已出场' }}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                            <div class="order-timeline text-muted">
+                                                <small>
+                                                    <span class="me-2">
+                                                        <i class="fas fa-clock me-1"></i>
+                                                        创建：{{ order.created_at.strftime('%Y-%m-%d %H:%M') if order.created_at else '-' }}
+                                                    </span>
+                                                    {% if order.status != 'pending' %}
+                                                    <span class="me-2">
+                                                        <i class="fas fa-play-circle me-1"></i>
+                                                        执行：{{ order.executed_at.strftime('%Y-%m-%d %H:%M') if order.executed_at else '-' }}
+                                                    </span>
+                                                    {% endif %}
+                                                    {% if order.status == 'exited' %}
+                                                    <span>
+                                                        <i class="fas fa-stop-circle me-1"></i>
+                                                        出场：{{ order.exited_at.strftime('%Y-%m-%d %H:%M') if order.exited_at else '-' }}
+                                                    </span>
+                                                    {% endif %}
+                                                </small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 </div>
 
 {% block scripts %}
@@ -147,12 +192,12 @@ document.addEventListener('DOMContentLoaded', function() {
             
             if (detailsRow.style.display === 'none') {
                 detailsRow.style.display = 'table-row';
-                icon.classList.remove('fa-plus');
-                icon.classList.add('fa-minus');
+                icon.classList.remove('fa-plus-circle');
+                icon.classList.add('fa-minus-circle');
             } else {
                 detailsRow.style.display = 'none';
-                icon.classList.remove('fa-minus');
-                icon.classList.add('fa-plus');
+                icon.classList.remove('fa-minus-circle');
+                icon.classList.add('fa-plus-circle');
             }
         });
     });
@@ -160,49 +205,43 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // 执行订单
 function executeOrder(orderId) {
-    if (!confirm('确定要执行该订单吗？')) {
-        return;
+    if (confirm('确定要执行这个订单吗？')) {
+        fetch(`/orders/order/${orderId}/execute`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert(data.message || '执行订单失败');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('执行订单时出错');
+        });
     }
-    
-    fetch(`/orders/order/${orderId}/execute`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            location.reload();
-        } else {
-            alert(data.message || '执行失败');
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        alert('执行失败');
-    });
 }
 
-// 准备出场订单
+// 准备出场
 function prepareExitOrder(orderId) {
-    document.getElementById('exitOrderId').value = orderId;
-}
-
-// 提交出场订单
-function submitExitOrder() {
-    const orderId = document.getElementById('exitOrderId').value;
-    const exitPrice = document.getElementById('exitPrice').value;
+    const exitPrice = prompt('请输入出场价格：');
+    if (exitPrice === null) return;  // 用户取消
     
-    if (!exitPrice) {
-        alert('请输入出场价格');
+    if (!exitPrice || isNaN(exitPrice)) {
+        alert('请输入有效的价格');
         return;
     }
     
+    // 执行出场
     fetch(`/orders/order/${orderId}/exit`, {
         method: 'POST',
         headers: {
-            'Content-Type': 'application/x-www-form-urlencoded'
+            'Content-Type': 'application/x-www-form-urlencoded',
         },
         body: `exit_price=${exitPrice}`
     })
@@ -216,33 +255,9 @@ function submitExitOrder() {
     })
     .catch(error => {
         console.error('Error:', error);
-        alert('出场失败');
+        alert('出场时出错');
     });
 }
 </script>
-
-<!-- 出场订单模态框 -->
-<div class="modal fade" id="exitOrderModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">订单出场</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <input type="hidden" id="exitOrderId">
-                <div class="mb-3">
-                    <label for="exitPrice" class="form-label">出场价格</label>
-                    <input type="number" class="form-control" id="exitPrice" step="0.0001" required>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
-                <button type="button" class="btn btn-primary" onclick="submitExitOrder()">确认出场</button>
-            </div>
-        </div>
-    </div>
-</div>
 {% endblock %}
-
 {% endblock %}

@@ -18,23 +18,24 @@ CREATE TABLE accounts (
 
 CREATE TABLE contracts (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    contract_name VARCHAR(100) NOT NULL,
-    period VARCHAR(50) NOT NULL,
+    contract_name VARCHAR(100) NOT NULL COLLATE 'utf8mb4_0900_ai_ci',
+    period VARCHAR(50) NOT NULL COLLATE 'utf8mb4_0900_ai_ci',
     stop_loss_amount DECIMAL(15, 2) NOT NULL,
-    entry_time TEXT,
-    period_upgrade_time TEXT,
-    ma_price DECIMAL(15, 5),
-    highest_price DECIMAL(15, 5),
-    lowest_price DECIMAL(15, 5),
-    actual_entry_price DECIMAL(15, 5),
-    stop_loss_price DECIMAL(15, 5),
-    bollinger_period VARCHAR(50),
-    exit_time DATETIME,
-    exit_price DECIMAL(15, 5),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    created_by INT,
-    FOREIGN KEY (created_by) REFERENCES users(id)
-);
+    entry_time TEXT NULL DEFAULT NULL COLLATE 'utf8mb4_0900_ai_ci',
+    period_upgrade_time TEXT NULL DEFAULT NULL COLLATE 'utf8mb4_0900_ai_ci',
+    ma_price DECIMAL(15, 5) NULL DEFAULT NULL,
+    actual_entry_price DECIMAL(15, 5) NULL DEFAULT NULL,
+    stop_loss_price DECIMAL(15, 5) NULL DEFAULT NULL,
+    bollinger_period VARCHAR(50) NULL DEFAULT NULL COLLATE 'utf8mb4_0900_ai_ci',
+    exit_time DATETIME NULL DEFAULT NULL,
+    exit_price DECIMAL(15, 5) NULL DEFAULT NULL,
+    created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+    created_by INT NULL DEFAULT NULL,
+    price DECIMAL(10, 4) NULL DEFAULT NULL,
+    PRIMARY KEY (id) USING BTREE,
+    INDEX created_by (created_by) USING BTREE,
+    FOREIGN KEY (created_by) REFERENCES users(id) ON UPDATE NO ACTION ON DELETE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 CREATE TABLE orders (
     id INT AUTO_INCREMENT PRIMARY KEY,
