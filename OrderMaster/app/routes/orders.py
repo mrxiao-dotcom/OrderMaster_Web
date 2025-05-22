@@ -144,12 +144,24 @@ def edit_contract(contract_id):
         contract_data = {
             'contract_name': request.form.get('contract_name'),
             'period': request.form.get('period'),
-            'stop_loss_amount': request.form.get('stop_loss_amount'),
-            'bollinger_period': request.form.get('bollinger_period')
+            'stop_loss_amount': float(request.form.get('stop_loss_amount')),
+            'bollinger_period': int(request.form.get('bollinger_period')),
+            'entry_time': request.form.get('entry_time'),
+            'period_upgrade_time': request.form.get('period_upgrade_time'),
+            'ma_price': float(request.form.get('ma_price')) if request.form.get('ma_price') else None,
+            'price': float(request.form.get('price')) if request.form.get('price') else None,
+            'actual_entry_price': float(request.form.get('actual_entry_price')) if request.form.get('actual_entry_price') else None,
+            'stop_loss_price': float(request.form.get('stop_loss_price')) if request.form.get('stop_loss_price') else None
         }
         
-        Contract.update(contract_id, contract_data)
-        flash('合约更新成功')
+        try:
+            Contract.update(contract_id, contract_data)
+            flash('合约更新成功', 'success')
+        except Exception as e:
+            flash(f'合约更新失败: {str(e)}', 'error')
+            logger.error(f"更新合约时出错: {str(e)}")
+            logger.error(traceback.format_exc())
+        
         return redirect(url_for('orders.overview'))
     
     return render_template('orders/edit_contract.html', contract=contract)

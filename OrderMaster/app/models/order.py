@@ -144,27 +144,3 @@ class Order:
         db.commit()
         cursor.close()
 
-    @staticmethod
-    def get_active_contracts():
-        logger.info("开始获取活跃合约列表")
-        db = get_db()
-        cursor = db.cursor()
-        try:
-            sql = """
-            SELECT * FROM contracts
-            WHERE exit_time IS NULL
-            ORDER BY created_at DESC
-            """
-            cursor.execute(sql)
-            contracts = cursor.fetchall()
-            logger.info(f"查询到的合约数量: {len(contracts)}")
-            for contract in contracts:
-                contract['orders'] = Order.get_by_contract(contract['id'])
-                account_names = [order['account_name'] for order in contract['orders']]
-                contract['associated_accounts'] = ', '.join(account_names)
-            return contracts
-        except Exception as e:
-            logger.error(f"获取活跃合约时出错: {str(e)}")
-            raise
-        finally:
-            cursor.close()

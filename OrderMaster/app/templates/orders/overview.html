@@ -89,8 +89,8 @@
                         <!-- 账户列表只渲染一次 -->
                         <div class="associated-accounts-container">
                             {% if current_user.role == 'executor' %}
-                                {# 下单员只显示待执行订单，并有执行按钮 #}
-                                {% for order in contract.orders if order.status == 'pending' %}
+                                {# 下单员显示待执行和已执行的订单 #}
+                                {% for order in contract.orders if order.status in ['pending', 'executed'] %}
                                 <div class="account-record mb-1">
                                     <div class="card">
                                         <div class="card-body py-2">
@@ -106,8 +106,14 @@
                                                     </div>
                                                 </div>
                                                 <div class="account-status-section d-flex align-items-center">
-                                                    <span class="badge bg-warning me-2">待执行</span>
-                                                    <button class="btn btn-sm btn-success py-0" onclick="executeOrder({{ order.id }})">执行</button>
+                                                    <span class="badge {% if order.status == 'pending' %}bg-warning{% else %}bg-success{% endif %} me-2">
+                                                        {{ '待执行' if order.status == 'pending' else '已执行' }}
+                                                    </span>
+                                                    {% if order.status == 'pending' %}
+                                                        <button class="btn btn-sm btn-success py-0" onclick="executeOrder({{ order.id }})">执行</button>
+                                                    {% elif order.status == 'executed' %}
+                                                        <button class="btn btn-sm btn-danger py-0" onclick="prepareExitOrder({{ order.id }})">出场</button>
+                                                    {% endif %}
                                                 </div>
                                             </div>
                                             <div class="order-timeline text-muted">
@@ -116,6 +122,12 @@
                                                         <i class="fas fa-clock me-1"></i>
                                                         创建：{{ order.created_at.strftime('%Y-%m-%d %H:%M') if order.created_at else '-' }}
                                                     </span>
+                                                    {% if order.status == 'executed' %}
+                                                    <span class="me-2">
+                                                        <i class="fas fa-play-circle me-1"></i>
+                                                        执行：{{ order.executed_at.strftime('%Y-%m-%d %H:%M') if order.executed_at else '-' }}
+                                                    </span>
+                                                    {% endif %}
                                                 </small>
                                             </div>
                                         </div>
